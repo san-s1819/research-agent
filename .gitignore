@@ -1,8 +1,9 @@
 # Ignore specific files
- "Important details.txt"
+ "Important\ details.txt"
 
 # Common files to ignore (optional but recommended)
 .DS_Store
 .env
+venv5/
 *.log
 node_modules/ 

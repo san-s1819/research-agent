@@ -1,0 +1,16 @@
+#langchain
+#openai
+#scholarly
+#spacy
+
+datasets==2.19.1
+langchain-pinecone==0.1.1
+langchain-openai==0.1.9
+langchain>=0.3.11,<0.4.0
+langchain-core>=0.3.24,<0.4.0
+langgraph==0.1.1
+semantic-router==0.0.48
+serpapi==0.1.5
+google-search-results==2.4.2
+langchain-groq>=0.2.1
+langchain-community>=0.3.11 
