@@ -204,11 +204,17 @@ system_prompt = """You are the oracle, the great AI decision maker.
 Given the user's query you must decide what to do with it based on the
 list of tools provided to you.
 
-Previous actions and results:
-{scratchpad}
 
-If you see that a tool has been used with a particular query, do NOT use that 
-same tool with the same query again."""
+If you see that a tool has been used (in the scratchpad) with a particular
+query, do NOT use that same tool with the same query again. Also, do NOT use
+any tool more than twice (ie, if the tool appears in the scratchpad twice, do
+not use it again).
+
+
+You should aim to collect information from a diverse range of sources before
+providing the answer to the user. Once you have collected plenty of information
+to answer the user's question (stored in the scratchpad) use the final_answer
+tool."""
 
 
 prompt = ChatPromptTemplate.from_messages([
@@ -222,11 +228,12 @@ from langchain_core.messages import ToolCall, ToolMessage
 from langchain_openai import ChatOpenAI
 
 
-llm = ChatGroq(
-    api_key=os.environ["GROQ_API_KEY"],
-    model_name="mixtral-8x7b-32768",  # or "llama2-70b-4096"
-    temperature=0
+llm = ChatOpenAI(
+   model="gpt-4o-2024-11-20",
+   openai_api_key=os.getenv("OPENAI_API_KEY"),#os.environ["OPENAI_API_KEY"],
+   temperature=0
 )
+
 
 tools=[
    rag_search_filter,
@@ -251,53 +258,24 @@ def create_scratchpad(intermediate_steps: list[AgentAction]):
    return "\n---\n".join(research_steps)
 
 
-# Create the agent with scratchpad-aware prompt
-agent = create_structured_chat_agent(
-    llm=llm,
-    tools=tools,
-    prompt=prompt.partial(scratchpad=lambda x: create_scratchpad(x["intermediate_steps"]))
-)
-
-oracle = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    verbose=True,
-    handle_parsing_errors=True
+oracle = (
+   {
+       "input": lambda x: x["input"],
+       "chat_history": lambda x: x["chat_history"],
+       "scratchpad": lambda x: create_scratchpad(
+           intermediate_steps=x["intermediate_steps"]
+       ),
+   }
+   | prompt
+   | llm.bind_tools(tools, tool_choice="any")
 )
 
 inputs = {
-    "input": "tell me something interesting about dogs",
+    "input": "what is agentic AI?",
     "chat_history": [],
     "intermediate_steps": [],
 }
 out = oracle.invoke(inputs)
+print(out)
 print(out.tool_calls[0]["name"])
 print(out.tool_calls[0]["args"])
-
-from typing import TypedDict
-
-
-def run_oracle(state: dict):
-   print("run_oracle")
-   print(f"intermediate_steps: {state['intermediate_steps']}")
-   out = oracle.invoke(state)
-   tool_name = out.tool_calls[0]["name"]
-   tool_args = out.tool_calls[0]["args"]
-   action_out = AgentAction(
-       tool=tool_name,
-       tool_input=tool_args,
-       log="TBD"
-   )
-   return {
-       "intermediate_steps": [action_out]
-   }
-
-
-def router(state: dict):
-   # return the tool name to use
-   if isinstance(state["intermediate_steps"], list):
-       return state["intermediate_steps"][-1].tool
-   else:
-       # if we output bad format go to final answer
-       print("Router invalid format")
-       return "final_answer"

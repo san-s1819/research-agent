@@ -1,9 +1,29 @@
-# Ignore specific files
- "Important\ details.txt"
-
-# Common files to ignore (optional but recommended)
-.DS_Store
+# Environment variables
 .env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
 venv5/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# System files
+.DS_Store
+
+# Logs
 *.log
-node_modules/ 
+
+# Dependencies
+node_modules/
+
+# Project specific
+"important details.txt"
