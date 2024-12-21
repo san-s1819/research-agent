@@ -155,7 +155,7 @@ def format_rag_contexts(matches: list):
 def rag_search_filter(query: str, arxiv_id: str):
    """Finds information from our ArXiv database using a natural language query
    and a specific ArXiv ID. Allows us to learn more details about a specific paper."""
-   xq = encoder([query])
+   xq = encoder.encode([query])
    xc = index.query(vector=xq, top_k=6, include_metadata=True, filter={"arxiv_id": arxiv_id})
    context_str = format_rag_contexts(xc["matches"])
    return context_str
@@ -164,7 +164,7 @@ def rag_search_filter(query: str, arxiv_id: str):
 @tool("rag_search")
 def rag_search(query: str):
    """Finds specialist information on AI using a natural language query."""
-   xq = encoder([query])
+   xq = encoder.encode([query])
    xc = index.query(vector=xq, top_k=2, include_metadata=True)
    context_str = format_rag_contexts(xc["matches"])
    return context_str
@@ -270,15 +270,15 @@ oracle = (
    | llm.bind_tools(tools, tool_choice="any")
 )
 
-inputs = {
-    "input": "what is agentic AI?",
-    "chat_history": [],
-    "intermediate_steps": [],
-}
-out = oracle.invoke(inputs)
-print(out)
-print(out.tool_calls[0]["name"])
-print(out.tool_calls[0]["args"])
+# inputs = {
+#     "input": "what is agentic AI?",
+#     "chat_history": [],
+#     "intermediate_steps": [],
+# }
+# out = oracle.invoke(inputs)
+# print(out)
+# print(out.tool_calls[0]["name"])
+# print(out.tool_calls[0]["args"])
 
 def run_oracle(state: list):
     print("run_oracle")
@@ -325,3 +325,91 @@ def run_tool(state: list):
         log=str(out)
     )
     return {"intermediate_steps": [action_out]}
+
+from langgraph.graph import StateGraph, END
+
+
+# initialize the graph with our AgentState
+graph = StateGraph(AgentState)
+
+
+# add nodes
+graph.add_node("oracle", run_oracle)
+graph.add_node("rag_search_filter", run_tool)
+graph.add_node("rag_search", run_tool)
+graph.add_node("fetch_arxiv", run_tool)
+graph.add_node("web_search", run_tool)
+graph.add_node("final_answer", run_tool)
+
+
+# specify the entry node
+graph.set_entry_point("oracle")
+
+
+# add the conditional edges which use the router
+graph.add_conditional_edges(
+   source="oracle",  # where in graph to start
+   path=router,  # function to determine which node is called
+)
+
+
+# create edges from each tool back to the oracle
+for tool_obj in tools:
+   if tool_obj.name != "final_answer":
+       graph.add_edge(tool_obj.name, "oracle")
+
+
+# if anything goes to final answer, it must then move to END
+graph.add_edge("final_answer", END)
+
+
+# finally, we compile our graph
+runnable = graph.compile()
+
+# out = runnable.invoke({
+#     "input": "tell me something interesting about dogs",
+#     "chat_history": [],
+# })
+
+def build_report(output: dict):
+   research_steps = output["research_steps"]
+   if type(research_steps) is list:
+       research_steps = "\n".join([f"- {r}" for r in research_steps])
+   sources = output["sources"]
+   if type(sources) is list:
+       sources = "\n".join([f"- {s}" for s in sources])
+   return f"""
+INTRODUCTION
+------------
+{output["introduction"]}
+
+
+RESEARCH STEPS
+--------------
+{research_steps}
+
+
+REPORT
+------
+{output["main_body"]}
+
+
+CONCLUSION
+----------
+{output["conclusion"]}
+
+
+SOURCES
+-------
+{sources}
+"""
+out = runnable.invoke({
+    "input": "tell me about AI",
+    "chat_history": []
+})
+
+print("#####################")
+
+print(build_report(
+    output=out["intermediate_steps"][-1].tool_input
+))
