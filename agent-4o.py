@@ -7,15 +7,15 @@ from langchain_core.tools import tool
 import re
 from serpapi import GoogleSearch
 import os
-from getpass import getpass
+#from getpass import getpass
 
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone
 import time
 import os
-from langchain_groq import ChatGroq
-from langchain.agents import AgentExecutor
+#from langchain_groq import ChatGroq
+#from langchain.agents import AgentExecutor
 from langchain.agents import create_structured_chat_agent
 
 dataset = load_dataset("jamescalam/ai-arxiv2-semantic-chunks", split="train")
@@ -155,7 +155,7 @@ def format_rag_contexts(matches: list):
 def rag_search_filter(query: str, arxiv_id: str):
    """Finds information from our ArXiv database using a natural language query
    and a specific ArXiv ID. Allows us to learn more details about a specific paper."""
-   xq = encoder.encode([query])
+   xq = encoder.encode([query]).tolist()
    xc = index.query(vector=xq, top_k=6, include_metadata=True, filter={"arxiv_id": arxiv_id})
    context_str = format_rag_contexts(xc["matches"])
    return context_str
@@ -164,7 +164,7 @@ def rag_search_filter(query: str, arxiv_id: str):
 @tool("rag_search")
 def rag_search(query: str):
    """Finds specialist information on AI using a natural language query."""
-   xq = encoder.encode([query])
+   xq = encoder.encode([query]).tolist()
    xc = index.query(vector=xq, top_k=2, include_metadata=True)
    context_str = format_rag_contexts(xc["matches"])
    return context_str
