@@ -230,7 +230,7 @@ from langchain_openai import ChatOpenAI
 
 llm = ChatOpenAI(
    model="gpt-4o-2024-11-20",
-   openai_api_key=os.getenv("OPENAI_API_KEY"),#os.environ["OPENAI_API_KEY"],
+   openai_api_key=os.getenv("OPENAI_API_KEY"),
    temperature=0
 )
 
@@ -269,16 +269,6 @@ oracle = (
    | prompt
    | llm.bind_tools(tools, tool_choice="any")
 )
-
-# inputs = {
-#     "input": "what is agentic AI?",
-#     "chat_history": [],
-#     "intermediate_steps": [],
-# }
-# out = oracle.invoke(inputs)
-# print(out)
-# print(out.tool_calls[0]["name"])
-# print(out.tool_calls[0]["args"])
 
 def run_oracle(state: list):
     print("run_oracle")
@@ -366,11 +356,6 @@ graph.add_edge("final_answer", END)
 # finally, we compile our graph
 runnable = graph.compile()
 
-# out = runnable.invoke({
-#     "input": "tell me something interesting about dogs",
-#     "chat_history": [],
-# })
-
 def build_report(output: dict):
    research_steps = output["research_steps"]
    if type(research_steps) is list:
@@ -403,13 +388,21 @@ SOURCES
 -------
 {sources}
 """
-out = runnable.invoke({
-    "input": "tell me about AI",
-    "chat_history": []
-})
+# out = runnable.invoke({
+#     "input": "tell me about AI",
+#     "chat_history": []
+# })
 
-print("#####################")
+# print(build_report(
+#     output=out["intermediate_steps"][-1].tool_input
+# ))
 
-print(build_report(
-    output=out["intermediate_steps"][-1].tool_input
-))
+if __name__ == "__main__":
+    out = runnable.invoke({
+        "input": "What are the latest developments in large language models?",
+        "chat_history": []
+    })
+    
+    print(build_report(
+        output=out["intermediate_steps"][-1].tool_input
+    ))
