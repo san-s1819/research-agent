@@ -1,20 +1,3 @@
- INTRODUCTION
- ------------
- <some intro to our report>
-  RESEARCH STEPS
- --------------
- <the steps the agent took during research>
-  REPORT
- ------
- <the report main body>
-  CONCLUSION
- ----------
- <the report conclusion>
-  SOURCES
- -------
- <any sources the agent used>
-
-
  # AI Research Assistant 🤖📚
 
 An intelligent research assistant that reads, understands, and synthesizes information from academic papers using LangChain, Vector Search, and LLMs.
@@ -85,5 +68,23 @@ ai-research-assistant/
 ├── requirements.txt # Project dependencies
 ├── .env # Environment variables (create this)
 └── README.md # This file
+
+8. **Output format**
+
+ INTRODUCTION
+ ------------
+ <some intro to our report>
+  RESEARCH STEPS
+ --------------
+ <the steps the agent took during research>
+  REPORT
+ ------
+ <the report main body>
+  CONCLUSION
+ ----------
+ <the report conclusion>
+  SOURCES
+ -------
+ <any sources the agent used>
 
 Don't forget to star ⭐ this repository if you found it helpful!
